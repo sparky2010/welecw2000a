@@ -1100,7 +1100,7 @@ void setFramePosition(int32_t diff){
 
 void writeword(unsigned pix,char llength)		//3 Byte auf UART schreiben
 {
-	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR,  pix>>8);    	//Farbe MSB
+	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR,  pix>>8);    //Farbe MSB
 	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, pix);       	//Farbe LSB
 	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, llength);	//Lauflänge
 }
@@ -1108,7 +1108,7 @@ void writeword(unsigned pix,char llength)		//3 Byte auf UART schreiben
 void writeword_block(unsigned pix,char llength)		//3 Byte auf UART schreiben
 {
 	unsigned char i=0;
-	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR,  pix>>8);    	//Farbe MSB
+	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR,  pix>>8);    //Farbe MSB
 	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, pix);       	//Farbe LSB
 	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, llength);	//Lauflänge
 
@@ -1161,19 +1161,24 @@ void rle_enc(unsigned int pixel, int init, void writew(unsigned pix,char llength
 void make_shot(unsigned char type)
 {
 	int i;					//Zählvariable
-	void (*writew)(unsigned,char);
+	unsigned int error=0;
+	char c;
+	void (*writew)(unsigned,char) = writeword;	//Normale Übertragung
 
 	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, 'S');			//"Jetzt kommt
 	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, 0xFF);			//ein Screenshot"
-
 	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, type);			//Dumptype (PPM, BMP, PBM, CSV...)
 
-	if(ReceiveChar((uart_regs *)GENERIC_UART_BASE_ADDR, 1000, NULL) == 0)
-	{							//Waverecorder
-		writew=writeword;
-	}else						//µC Board
+	do				//Flush UART
 	{
-		writew=writeword_block;
+		ReceiveChar((uart_regs *)GENERIC_UART_BASE_ADDR, 2, &error);
+	}while(error!=1);
+	error=0;
+
+	c = ReceiveChar((uart_regs *)GENERIC_UART_BASE_ADDR, 1000, &error);	//~5s (kann stark reduziert werden)
+	if( c == 1 && error == 0)					//Wenn µC antwortet
+	{
+		writew=writeword_block;					//Blockweise Übertragung
 		outcount=0;
 	}
 
@@ -1182,7 +1187,7 @@ void make_shot(unsigned char type)
 	{
 		rle_enc(Framebuffer[i],0,*writew);						//Pixel in RLE schicken
 	}
-	rle_enc(0,2,*writew);					//RLE beenden
+	rle_enc(0,2,*writew);//RLE beenden
 	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, 0x73);			//Stopp Kennung
 	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, 0xaa);			//Muss evtl geändert werden
 
