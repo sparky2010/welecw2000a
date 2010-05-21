@@ -299,7 +299,6 @@ uint32_t Request::Screenshot(const char *filename)
 	}
 	
 	type = mComm->ReceiveByte();
-	//SendByte(0x00000000);
 	printf("Receiving image Type %d\n", type);
 
 	switch (type)
