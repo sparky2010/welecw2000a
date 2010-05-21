@@ -1165,22 +1165,23 @@ void make_shot(unsigned char type)
 	char c;
 	void (*writew)(unsigned,char) = writeword;	//Normale Übertragung
 
-	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, 'S');			//"Jetzt kommt
-	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, 0xFF);			//ein Screenshot"
-	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, type);			//Dumptype (PPM, BMP, PBM, CSV...)
-
 	do				//Flush UART
 	{
 		ReceiveChar((uart_regs *)GENERIC_UART_BASE_ADDR, 2, &error);
 	}while(error!=1);
 	error=0;
 
-	c = ReceiveChar((uart_regs *)GENERIC_UART_BASE_ADDR, 1000, &error);	//~5s (kann stark reduziert werden)
+	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, 'S');			//"Jetzt kommt
+	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, 0xFF);			//ein Screenshot"
+
+	c = ReceiveChar((uart_regs *)GENERIC_UART_BASE_ADDR, 5, &error);
 	if( c == 1 && error == 0)					//Wenn µC antwortet
 	{
 		writew=writeword_block;					//Blockweise Übertragung
 		outcount=0;
 	}
+
+	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, type);			//Dumptype (PPM, BMP, PBM, CSV...)
 
 	rle_enc(0,1,*writew);			//RLE initialisieren
 	for(i=0;i<640*480;i++)			//Für jeden Pixel:
