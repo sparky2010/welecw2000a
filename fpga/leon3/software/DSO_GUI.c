@@ -1102,7 +1102,7 @@ void writeword(unsigned pix,char llength)		//3 Byte auf UART schreiben
 {
 	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR,  pix>>8);    //Farbe MSB
 	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, pix);       	//Farbe LSB
-	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, llength);	//Lauflänge
+	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, llength);	//Laufl?nge
 }
 
 void writeword_block(unsigned pix,char llength)		//3 Byte auf UART schreiben
@@ -1110,48 +1110,48 @@ void writeword_block(unsigned pix,char llength)		//3 Byte auf UART schreiben
 	unsigned char i=0;
 	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR,  pix>>8);    //Farbe MSB
 	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, pix);       	//Farbe LSB
-	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, llength);	//Lauflänge
+	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, llength);	//Laufl?nge
 
 	outcount+=3;					//3 Byte gesendet
-	if(outcount>=BLOCKSIZE)			//Wenn der buffer im µC voll ist
+	if(outcount>=BLOCKSIZE)			//Wenn der buffer im ?C voll ist
 	{
 		while(ReceiveChar((uart_regs *)GENERIC_UART_BASE_ADDR, 70, NULL) != ' ')	//150 = 3,7s
 		{
 			i++;
 			if(i==5) break;
 		}
-		outcount=0;					//buffer im µC wieder leer
+		outcount=0;					//buffer im ?C wieder leer
 	}
 }
 
 void rle_enc(unsigned int pixel, int init, void writew(unsigned pix,char llength) ) //44922 Byte = 4,6s
 {
     static unsigned int llength;		//Anzahl gleicher Pixel hintereinander
-    static unsigned int lastpixel;		//Das zuletzt geprüfte Pixel
+    static unsigned int lastpixel;		//Das zuletzt gepr?fte Pixel
     static unsigned int maxlen=254;		//Maximale Anzahl gleicher Pixel hintereinander
 
     if (init==1)						//Bei neuem Screenshot
 	{
-        llength=0; lastpixel=1;			//Lauflänge auf 0,
+        llength=0; lastpixel=1;			//Laufl?nge auf 0,
         return;							//lastbyte=1 -> Farbe mit dem Wert 1 existiert nicht
 	}
 
 	if ((pixel==lastpixel) && (init != 2))	//Wenn Pixel die selbe Farbe wie vorher hat
 	{
-		llength++;							//Läuflänge erhöhen
-        if (llength>=maxlen)				//Wenn maximallänge erreicht ist
+		llength++;							//L?ufl?nge erh?hen
+        if (llength>=maxlen)				//Wenn maximall?nge erreicht ist
         {
         	writew(pixel,llength);		//Pixel und Anzahl ausgeben
-        	llength=0;						//Lauflänge wieder auf 0
-            lastpixel=1;					//Letztes Pixel auf ungültigen Wert setzen
+        	llength=0;						//Laufl?nge wieder auf 0
+            lastpixel=1;					//Letztes Pixel auf ung?ltigen Wert setzen
         }
     }
 
 	else	//pixel!=lastpixel
 	{
-        if (llength > 0)					//Wenn noch Lauflänge von altem Pixel vorhanden
+        if (llength > 0)					//Wenn noch Laufl?nge von altem Pixel vorhanden
 		{
-        	writew(lastpixel,llength);	//Altes Pixel und Lauflänge ausgeben
+        	writew(lastpixel,llength);	//Altes Pixel und Laufl?nge ausgeben
 		}
         lastpixel=pixel;					//Letzes Pixel = aktuelles Pixel
         llength=1;							//Mindestens 1 Pixel
@@ -1160,10 +1160,10 @@ void rle_enc(unsigned int pixel, int init, void writew(unsigned pix,char llength
 
 void make_shot(unsigned char type)
 {
-	int i;					//Zählvariable
+	int i;					//Z?hlvariable
 	unsigned int error=0;
 	char c;
-	void (*writew)(unsigned,char) = writeword;	//Normale Übertragung
+	void (*writew)(unsigned,char) = writeword;	//Normale ?bertragung
 
 	do				//Flush UART
 	{
@@ -1175,22 +1175,22 @@ void make_shot(unsigned char type)
 	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, 0xFF);			//ein Screenshot"
 
 	c = ReceiveChar((uart_regs *)GENERIC_UART_BASE_ADDR, 5, &error);
-	if( c == 1 && error == 0)					//Wenn µC antwortet
+	if( c == 1 && error == 0)					//Wenn ?C antwortet
 	{
-		writew=writeword_block;					//Blockweise Übertragung
+		writew=writeword_block;					//Blockweise ?bertragung
 		outcount=0;
 	}
 
 	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, type);			//Dumptype (PPM, BMP, PBM, CSV...)
 
 	rle_enc(0,1,*writew);			//RLE initialisieren
-	for(i=0;i<640*480;i++)			//Für jeden Pixel:
+	for(i=0;i<640*480;i++)			//F?r jeden Pixel:
 	{
 		rle_enc(Framebuffer[i],0,*writew);						//Pixel in RLE schicken
 	}
 	rle_enc(0,2,*writew);//RLE beenden
 	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, 0x73);			//Stopp Kennung
-	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, 0xaa);			//Muss evtl geändert werden
+	SendCharBlock((uart_regs *)GENERIC_UART_BASE_ADDR, 0xaa);			//Muss evtl ge?ndert werden
 
 }
 
